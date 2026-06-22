@@ -1,17 +1,14 @@
-import type { Booking } from "../_lib/types";
+"use client";
+
 import { slotFormatter } from "../_lib/utils";
+import { useAppDispatch, useAppSelector } from "../_store/hooks";
+import { cancelBookingEntry } from "../_store/thunks";
 
-type YourBookingsCardProps = {
-  bookings: Booking[];
-  isBusy: boolean;
-  onCancelBooking: (bookingId: string) => Promise<void>;
-};
+export function YourBookingsCard() {
+  const dispatch = useAppDispatch();
+  const bookings = useAppSelector((state) => state.booking.bookings);
+  const isBusy = useAppSelector((state) => state.ui.isBusy);
 
-export function YourBookingsCard({
-  bookings,
-  isBusy,
-  onCancelBooking,
-}: YourBookingsCardProps) {
   return (
     <div className="rounded-2xl border border-[#dbe5dd] bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
@@ -41,7 +38,7 @@ export function YourBookingsCard({
 
                 <button
                   type="button"
-                  onClick={() => onCancelBooking(booking.id)}
+                  onClick={() => dispatch(cancelBookingEntry(booking.id))}
                   disabled={isBusy}
                   className="cursor-pointer rounded-lg border border-[#b45d5d] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#b45d5d] transition hover:bg-[#b45d5d] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >

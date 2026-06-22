@@ -1,20 +1,19 @@
+"use client";
+
+import { setCalendarIdInput } from "../_store/bookingSlice";
+import { useAppDispatch, useAppSelector } from "../_store/hooks";
+import { connectUserCalendar } from "../_store/thunks";
+
 type ConnectCalendarCardProps = {
-  calendarIdInput: string;
-  connectedCalendarId: string;
   defaultCalendarId: string;
-  isBusy: boolean;
-  onCalendarIdChange: (value: string) => void;
-  onConnectCalendar: () => Promise<void>;
 };
 
-export function ConnectCalendarCard({
-  calendarIdInput,
-  connectedCalendarId,
-  defaultCalendarId,
-  isBusy,
-  onCalendarIdChange,
-  onConnectCalendar,
-}: ConnectCalendarCardProps) {
+export function ConnectCalendarCard({ defaultCalendarId }: ConnectCalendarCardProps) {
+  const dispatch = useAppDispatch();
+  const calendarIdInput = useAppSelector((state) => state.booking.calendarIdInput);
+  const connectedCalendarId = useAppSelector((state) => state.booking.connectedCalendarId);
+  const isBusy = useAppSelector((state) => state.ui.isBusy);
+
   return (
     <div className="rounded-2xl border border-[#dbe5dd] bg-[#f6faf7] p-5">
       <h3 className="font-display text-xl">Connect Google Calendar</h3>
@@ -26,7 +25,7 @@ export function ConnectCalendarCard({
         <input
           type="text"
           value={calendarIdInput}
-          onChange={(event) => onCalendarIdChange(event.target.value)}
+          onChange={(event) => dispatch(setCalendarIdInput(event.target.value))}
           placeholder={defaultCalendarId}
           className="w-full rounded-xl border border-[#c6d4cb] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#274a3b]"
         />
@@ -34,7 +33,7 @@ export function ConnectCalendarCard({
         <button
           type="button"
           disabled={isBusy}
-          onClick={onConnectCalendar}
+          onClick={() => dispatch(connectUserCalendar())}
           className="cursor-pointer rounded-xl bg-[#274a3b] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3b30] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {connectedCalendarId ? "Update calendar" : "Connect calendar"}

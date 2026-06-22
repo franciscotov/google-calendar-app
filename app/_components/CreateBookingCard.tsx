@@ -1,24 +1,14 @@
-type CreateBookingCardProps = {
-  title: string;
-  startsAt: string;
-  endsAt: string;
-  isBusy: boolean;
-  onTitleChange: (value: string) => void;
-  onStartsAtChange: (value: string) => void;
-  onEndsAtChange: (value: string) => void;
-  onCreateBooking: () => Promise<void>;
-};
+"use client";
 
-export function CreateBookingCard({
-  title,
-  startsAt,
-  endsAt,
-  isBusy,
-  onTitleChange,
-  onStartsAtChange,
-  onEndsAtChange,
-  onCreateBooking,
-}: CreateBookingCardProps) {
+import { setEndsAt, setStartsAt, setTitle } from "../_store/bookingSlice";
+import { useAppDispatch, useAppSelector } from "../_store/hooks";
+import { createBookingEntry } from "../_store/thunks";
+
+export function CreateBookingCard() {
+  const dispatch = useAppDispatch();
+  const { title, startsAt, endsAt } = useAppSelector((state) => state.booking);
+  const isBusy = useAppSelector((state) => state.ui.isBusy);
+
   return (
     <div className="rounded-2xl border border-[#dbe5dd] bg-[#fcfdfb] p-5">
       <h3 className="font-display text-xl">Create booking</h3>
@@ -30,7 +20,7 @@ export function CreateBookingCard({
         <input
           type="text"
           value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
+          onChange={(event) => dispatch(setTitle(event.target.value))}
           placeholder="Booking title"
           className="rounded-xl border border-[#c6d4cb] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#274a3b] md:col-span-2"
         />
@@ -39,7 +29,7 @@ export function CreateBookingCard({
           <input
             type="datetime-local"
             value={startsAt}
-            onChange={(event) => onStartsAtChange(event.target.value)}
+            onChange={(event) => dispatch(setStartsAt(event.target.value))}
             className="mt-1 w-full rounded-xl border border-[#c6d4cb] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#274a3b]"
           />
         </label>
@@ -48,7 +38,7 @@ export function CreateBookingCard({
           <input
             type="datetime-local"
             value={endsAt}
-            onChange={(event) => onEndsAtChange(event.target.value)}
+            onChange={(event) => dispatch(setEndsAt(event.target.value))}
             className="mt-1 w-full rounded-xl border border-[#c6d4cb] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#274a3b]"
           />
         </label>
@@ -57,7 +47,7 @@ export function CreateBookingCard({
       <button
         type="button"
         disabled={isBusy}
-        onClick={onCreateBooking}
+        onClick={() => dispatch(createBookingEntry())}
         className="mt-4 cursor-pointer rounded-xl bg-[#1f6d58] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#185848] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Create booking

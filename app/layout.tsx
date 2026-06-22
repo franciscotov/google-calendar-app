@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./_store/providers";
 
 const uiFont = Space_Grotesk({
   variable: "--font-ui",
@@ -27,7 +28,9 @@ export default function RootLayout({
       lang="en"
       className={`${uiFont.variable} ${displayFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
