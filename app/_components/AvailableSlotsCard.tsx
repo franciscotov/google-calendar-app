@@ -25,7 +25,12 @@ export function AvailableSlotsCard() {
               key={`${slot.startsAt.toISOString()}-${slot.endsAt.toISOString()}`}
               type="button"
               onClick={() =>
-                dispatch(applySlotToForm({ slotStart: slot.startsAt, slotEnd: slot.endsAt }))
+                dispatch(
+                  applySlotToForm({
+                    slotStartIso: slot.startsAt.toISOString(),
+                    slotEndIso: slot.endsAt.toISOString(),
+                  }),
+                )
               }
               className="w-full cursor-pointer rounded-xl border border-[#d8e3dc] bg-[#fbfdfc] px-3 py-2 text-left text-sm font-medium text-[#274a3b] transition hover:border-[#274a3b] hover:bg-[#f1f7f3]"
             >

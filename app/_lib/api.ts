@@ -78,12 +78,18 @@ export async function getConnectedCalendar(accessToken: string) {
 export async function createBooking(
   accessToken: string,
   payload: { title: string; startsAt: string; endsAt: string },
+  googleAccessToken?: string,
 ) {
   return apiRequest<Booking>(
     "/bookings",
     {
       method: "POST",
       body: JSON.stringify(payload),
+      headers: googleAccessToken
+        ? {
+            "x-google-access-token": googleAccessToken,
+          }
+        : undefined,
     },
     accessToken,
   );

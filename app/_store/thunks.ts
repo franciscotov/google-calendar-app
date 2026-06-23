@@ -4,7 +4,6 @@ import {
   connectCalendar,
   createBooking,
   getBookings,
-  getConnectedCalendar,
   getTakenSlots,
   loginUser,
   registerUser,
@@ -16,12 +15,11 @@ import type { RootState } from "./store";
 type DashboardData = {
   bookings: Booking[];
   takenSlots: TakenSlot[];
-  connectedCalendarId: string;
-  calendarIdInput: string;
 };
 
 type SessionPayload = {
   token: string;
+  googleAccessToken: string;
   user: GoogleUser;
   dashboard: DashboardData;
 };
@@ -31,31 +29,23 @@ type ThunkConfig = {
   rejectValue: string;
 };
 
-async function loadDashboardData(token: string, fallbackEmail?: string): Promise<DashboardData> {
-  const [bookings, takenSlots, calendarData] = await Promise.all([
-    getBookings(token),
-    getTakenSlots(token),
-    getConnectedCalendar(token),
-  ]);
-
-  const connectedCalendarId = calendarData.user.googleCalendarId || "";
+async function loadDashboardData(token: string): Promise<DashboardData> {
+  const [bookings, takenSlots] = await Promise.all([getBookings(token), getTakenSlots(token)]);
 
   return {
     bookings,
     takenSlots,
-    connectedCalendarId,
-    calendarIdInput: connectedCalendarId || fallbackEmail || "",
   };
 }
 
 function getRequiredAuth(state: RootState) {
-  const { accessToken, user } = state.auth;
+  const { accessToken, googleAccessToken, user } = state.auth;
 
   if (!accessToken || !user) {
     throw new Error("Please sign in first.");
   }
 
-  return { accessToken, user };
+  return { accessToken, googleAccessToken, user };
 }
 
 export const restoreSession = createAsyncThunk<SessionPayload | null, void, ThunkConfig>(
@@ -68,9 +58,10 @@ export const restoreSession = createAsyncThunk<SessionPayload | null, void, Thun
     }
 
     try {
-      const dashboard = await loadDashboardData(session.token, session.user.email);
+      const dashboard = await loadDashboardData(session.token);
       return {
         token: session.token,
+        googleAccessToken: session.googleAccessToken,
         user: session.user,
         dashboard,
       };
@@ -104,11 +95,13 @@ export const authenticateWithGoogle = createAsyncThunk<SessionPayload, GoogleUse
         token = loginResponse.accessToken;
       }
 
+      await connectCalendar(token, googleUser.email);
       persistSession(token, googleUser);
-      const dashboard = await loadDashboardData(token, googleUser.email);
+      const dashboard = await loadDashboardData(token);
 
       return {
         token,
+        googleAccessToken: "",
         user: googleUser,
         dashboard,
       };
@@ -125,7 +118,7 @@ export const createBookingEntry = createAsyncThunk<DashboardData, void, ThunkCon
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const { accessToken, user } = getRequiredAuth(state);
+      const { accessToken, googleAccessToken } = getRequiredAuth(state);
       const { title, startsAt, endsAt } = state.booking;
 
       if (!title.trim()) {
@@ -147,13 +140,19 @@ export const createBookingEntry = createAsyncThunk<DashboardData, void, ThunkCon
         return rejectWithValue("Start time must be earlier than end time.");
       }
 
+      if (!googleAccessToken) {
+        return rejectWithValue(
+          "Google Calendar authorization is required before creating bookings.",
+        );
+      }
+
       await createBooking(accessToken, {
         title: title.trim(),
         startsAt: parsedStartsAt.toISOString(),
         endsAt: parsedEndsAt.toISOString(),
-      });
+      }, googleAccessToken);
 
-      return loadDashboardData(accessToken, user.email);
+      return loadDashboardData(accessToken);
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : "Failed to create booking");
     }
@@ -165,34 +164,12 @@ export const cancelBookingEntry = createAsyncThunk<DashboardData, string, ThunkC
   async (bookingId, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const { accessToken, user } = getRequiredAuth(state);
+      const { accessToken } = getRequiredAuth(state);
 
       await cancelBooking(accessToken, bookingId);
-      return loadDashboardData(accessToken, user.email);
+      return loadDashboardData(accessToken);
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : "Failed to cancel booking");
-    }
-  },
-);
-
-export const connectUserCalendar = createAsyncThunk<DashboardData, void, ThunkConfig>(
-  "booking/connectUserCalendar",
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const state = getState();
-      const { accessToken, user } = getRequiredAuth(state);
-      const calendarId = state.booking.calendarIdInput.trim();
-
-      if (!calendarId) {
-        return rejectWithValue("Calendar ID is required.");
-      }
-
-      await connectCalendar(accessToken, calendarId);
-      return loadDashboardData(accessToken, user.email);
-    } catch (error) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to connect calendar",
-      );
     }
   },
 );

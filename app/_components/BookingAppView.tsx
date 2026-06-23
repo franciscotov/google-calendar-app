@@ -3,19 +3,19 @@
 import Script from "next/script";
 import { useState } from "react";
 import { API_BASE_URL } from "../_lib/api";
-import { DEFAULT_CALENDAR_PLACEHOLDER } from "../_lib/utils";
 import { useBookingApp } from "../_hooks/useBookingApp";
 import { useAppSelector } from "../_store/hooks";
 import { AvailableSlotsCard } from "./AvailableSlotsCard";
-import { ConnectCalendarCard } from "./ConnectCalendarCard";
 import { CreateBookingCard } from "./CreateBookingCard";
 import { YourBookingsCard } from "./YourBookingsCard";
 import { GOOGLE_CLIENT_ID } from "../_lib/utils";
 
 export function BookingAppView() {
   const [googleLoaded, setGoogleLoaded] = useState(false);
-  const { googleButtonRef, signOut } = useBookingApp(googleLoaded);
+  const { googleButtonRef, signOut, grantCalendarAccess, hasCalendarAccess } =
+    useBookingApp(googleLoaded);
   const user = useAppSelector((state) => state.auth.user);
+  const isBusy = useAppSelector((state) => state.ui.isBusy);
   const infoMessage = useAppSelector((state) => state.ui.infoMessage);
   const errorMessage = useAppSelector((state) => state.ui.errorMessage);
 
@@ -43,7 +43,7 @@ export function BookingAppView() {
                   Book time without collisions.
                 </h1>
                 <p className="max-w-2xl text-sm text-[#46594f] md:text-base">
-                  Sign in with Google, connect your calendar, and book slots that are validated
+                  Sign in with Google and book slots that are validated
                   against both system bookings and Google Calendar events before confirmation.
                 </p>
               </div>
@@ -90,7 +90,36 @@ export function BookingAppView() {
                   </button>
                 </div>
 
-                <ConnectCalendarCard defaultCalendarId={user.email || DEFAULT_CALENDAR_PLACEHOLDER} />
+                <div className="rounded-2xl border border-[#dbe5dd] bg-[#f4f8ff] p-5">
+                  <h3 className="font-display text-xl">Calendar permission</h3>
+                  <p className="mt-1 text-sm text-[#4c6155]">
+                    Booking checks use your Google Calendar events in real time.
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+                        hasCalendarAccess
+                          ? "bg-[#daf3e1] text-[#1e5b33]"
+                          : "bg-[#fff0d6] text-[#7b4d0f]"
+                      }`}
+                    >
+                      {hasCalendarAccess ? "Permission granted" : "Permission required"}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => {
+                        void grantCalendarAccess();
+                      }}
+                      className="cursor-pointer rounded-xl bg-[#274a3b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f3b30] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {hasCalendarAccess ? "Refresh access" : "Grant calendar access"}
+                    </button>
+                  </div>
+                </div>
+
                 <CreateBookingCard />
                 <YourBookingsCard />
               </section>

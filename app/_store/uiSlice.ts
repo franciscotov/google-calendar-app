@@ -3,7 +3,6 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   authenticateWithGoogle,
   cancelBookingEntry,
-  connectUserCalendar,
   createBookingEntry,
   restoreSession,
 } from "./thunks";
@@ -25,17 +24,12 @@ const pendingActions = [
   authenticateWithGoogle,
   createBookingEntry,
   cancelBookingEntry,
-  connectUserCalendar,
 ];
 
 const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    clearMessages(state) {
-      state.infoMessage = "";
-      state.errorMessage = "";
-    },
     setInfoMessage(state, action: PayloadAction<string>) {
       state.infoMessage = action.payload;
       state.errorMessage = "";
@@ -62,10 +56,6 @@ const uiSlice = createSlice({
         state.isBusy = false;
         state.infoMessage = "Booking canceled.";
       })
-      .addCase(connectUserCalendar.fulfilled, (state) => {
-        state.isBusy = false;
-        state.infoMessage = "Google Calendar connected. New bookings will be checked for conflicts.";
-      })
       .addMatcher(isAnyOf(...pendingActions.map((thunk) => thunk.pending)), (state) => {
         state.isBusy = true;
         state.errorMessage = "";
@@ -77,5 +67,5 @@ const uiSlice = createSlice({
   },
 });
 
-export const { clearMessages, setInfoMessage, setErrorMessage } = uiSlice.actions;
+export const { setInfoMessage, setErrorMessage } = uiSlice.actions;
 export default uiSlice.reducer;

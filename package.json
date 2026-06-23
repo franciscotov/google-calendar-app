@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "start:dev": "npm run dev -- --inspect",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

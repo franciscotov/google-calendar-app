@@ -7,6 +7,7 @@ import { createBookingEntry } from "../_store/thunks";
 export function CreateBookingCard() {
   const dispatch = useAppDispatch();
   const { title, startsAt, endsAt } = useAppSelector((state) => state.booking);
+  const hasCalendarAccess = useAppSelector((state) => Boolean(state.auth.googleAccessToken));
   const isBusy = useAppSelector((state) => state.ui.isBusy);
 
   return (
@@ -15,6 +16,12 @@ export function CreateBookingCard() {
       <p className="mt-1 text-sm text-[#4c6155]">
         The backend verifies conflicts with system bookings and Google Calendar before confirming.
       </p>
+
+      {!hasCalendarAccess && (
+        <p className="mt-2 rounded-lg border border-[#f1cf8b] bg-[#fff7e1] px-3 py-2 text-xs text-[#6f561e]">
+          Grant Google Calendar permission above before creating a booking.
+        </p>
+      )}
 
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <input
