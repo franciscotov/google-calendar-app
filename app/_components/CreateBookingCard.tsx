@@ -3,6 +3,7 @@
 import { setEndsAt, setStartsAt, setTitle } from "../_store/bookingSlice";
 import { useAppDispatch, useAppSelector } from "../_store/hooks";
 import { createBookingEntry } from "../_store/thunks";
+import { BOOKING_TITLE_MAX_LENGTH } from "../_lib/validation";
 
 export function CreateBookingCard() {
   const dispatch = useAppDispatch();
@@ -29,6 +30,7 @@ export function CreateBookingCard() {
           value={title}
           onChange={(event) => dispatch(setTitle(event.target.value))}
           placeholder="Booking title"
+          maxLength={BOOKING_TITLE_MAX_LENGTH}
           className="rounded-xl border border-[#c6d4cb] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#274a3b] md:col-span-2"
         />
         <label className="text-sm text-[#33483d]">

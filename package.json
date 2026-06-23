@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "start:dev": "npm run dev -- --inspect",
+    "start:dev": "npm run dev",
+    "start:debug": "nest start -- --inspect",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

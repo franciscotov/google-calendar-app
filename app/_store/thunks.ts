@@ -10,6 +10,12 @@ import {
 } from "../_lib/api";
 import type { Booking, GoogleUser, TakenSlot } from "../_lib/types";
 import { clearSession, getStoredSession, parseDateInput, persistSession } from "../_lib/utils";
+import {
+  BOOKING_TITLE_MAX_LENGTH,
+  BOOKING_TITLE_MIN_LENGTH,
+  USER_EMAIL_MAX_LENGTH,
+  USER_NAME_MAX_LENGTH,
+} from "../_lib/validation";
 import type { RootState } from "./store";
 
 type DashboardData = {
@@ -78,10 +84,25 @@ export const authenticateWithGoogle = createAsyncThunk<SessionPayload, GoogleUse
   "auth/authenticateWithGoogle",
   async (googleUser, { rejectWithValue }) => {
     try {
+      const normalizedEmail = googleUser.email.trim();
+      const normalizedName = googleUser.name?.trim() || undefined;
+
+      if (!normalizedEmail) {
+        return rejectWithValue("Email is required.");
+      }
+
+      if (normalizedEmail.length > USER_EMAIL_MAX_LENGTH) {
+        return rejectWithValue(`Email must be at most ${USER_EMAIL_MAX_LENGTH} characters.`);
+      }
+
+      if (normalizedName && normalizedName.length > USER_NAME_MAX_LENGTH) {
+        return rejectWithValue(`Name must be at most ${USER_NAME_MAX_LENGTH} characters.`);
+      }
+
       let token: string;
 
       try {
-        const registerResponse = await registerUser(googleUser.email, googleUser.name);
+        const registerResponse = await registerUser(normalizedEmail, normalizedName);
         token = registerResponse.accessToken;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to register";
@@ -91,18 +112,23 @@ export const authenticateWithGoogle = createAsyncThunk<SessionPayload, GoogleUse
           throw error;
         }
 
-        const loginResponse = await loginUser(googleUser.email);
+        const loginResponse = await loginUser(normalizedEmail);
         token = loginResponse.accessToken;
       }
 
-      await connectCalendar(token, googleUser.email);
-      persistSession(token, googleUser);
+      const normalizedGoogleUser: GoogleUser = {
+        email: normalizedEmail,
+        name: normalizedName,
+      };
+
+      await connectCalendar(token, normalizedEmail);
+      persistSession(token, normalizedGoogleUser);
       const dashboard = await loadDashboardData(token);
 
       return {
         token,
         googleAccessToken: "",
-        user: googleUser,
+        user: normalizedGoogleUser,
         dashboard,
       };
     } catch (error) {
@@ -120,9 +146,22 @@ export const createBookingEntry = createAsyncThunk<DashboardData, void, ThunkCon
       const state = getState();
       const { accessToken, googleAccessToken } = getRequiredAuth(state);
       const { title, startsAt, endsAt } = state.booking;
+      const normalizedTitle = title.trim();
 
-      if (!title.trim()) {
+      if (!normalizedTitle) {
         return rejectWithValue("Booking title is required.");
+      }
+
+      if (normalizedTitle.length < BOOKING_TITLE_MIN_LENGTH) {
+        return rejectWithValue(
+          `Booking title must be at least ${BOOKING_TITLE_MIN_LENGTH} characters.`,
+        );
+      }
+
+      if (normalizedTitle.length > BOOKING_TITLE_MAX_LENGTH) {
+        return rejectWithValue(
+          `Booking title must be at most ${BOOKING_TITLE_MAX_LENGTH} characters.`,
+        );
       }
 
       const parsedStartsAt = parseDateInput(startsAt);
@@ -147,7 +186,7 @@ export const createBookingEntry = createAsyncThunk<DashboardData, void, ThunkCon
       }
 
       await createBooking(accessToken, {
-        title: title.trim(),
+        title: normalizedTitle,
         startsAt: parsedStartsAt.toISOString(),
         endsAt: parsedEndsAt.toISOString(),
       }, googleAccessToken);

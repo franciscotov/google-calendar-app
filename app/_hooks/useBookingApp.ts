@@ -12,6 +12,7 @@ import {
   GOOGLE_CLIENT_ID,
   persistGoogleAccessToken,
 } from "../_lib/utils";
+import { USER_EMAIL_MAX_LENGTH, USER_NAME_MAX_LENGTH } from "../_lib/validation";
 import { setGoogleAccessToken, signedOut } from "../_store/authSlice";
 import { resetBookingState } from "../_store/bookingSlice";
 import { useAppDispatch, useAppSelector } from "../_store/hooks";
@@ -111,9 +112,31 @@ export function useBookingApp(googleLoaded: boolean): BookingAppBindings {
         return;
       }
 
+      const normalizedEmail = payload.email.trim();
+      const normalizedName = payload.name?.trim() || undefined;
+
+      if (!normalizedEmail) {
+        dispatch(setErrorMessage("Google payload did not include a valid email."));
+        return;
+      }
+
+      if (normalizedEmail.length > USER_EMAIL_MAX_LENGTH) {
+        dispatch(
+          setErrorMessage(`Email must be at most ${USER_EMAIL_MAX_LENGTH} characters.`),
+        );
+        return;
+      }
+
+      if (normalizedName && normalizedName.length > USER_NAME_MAX_LENGTH) {
+        dispatch(
+          setErrorMessage(`Name must be at most ${USER_NAME_MAX_LENGTH} characters.`),
+        );
+        return;
+      }
+
       const nextUser: GoogleUser = {
-        email: payload.email,
-        name: payload.name,
+        email: normalizedEmail,
+        name: normalizedName,
       };
 
       try {
