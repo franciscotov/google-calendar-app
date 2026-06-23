@@ -86,10 +86,12 @@ export function useBookingApp(googleLoaded: boolean): BookingAppBindings {
         }
 
         tokenResolverRef.current = resolve;
-        tokenClientRef.current.requestAccessToken({ prompt });
+        if (user) {
+          tokenClientRef.current.requestAccessToken({ prompt });
+        }
       });
     },
-    [dispatch],
+    [dispatch, user],
   );
 
   const grantCalendarAccess = useCallback(() => {

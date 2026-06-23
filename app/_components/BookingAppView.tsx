@@ -1,10 +1,11 @@
 "use client";
 
 import Script from "next/script";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../_lib/api";
 import { useBookingApp } from "../_hooks/useBookingApp";
-import { useAppSelector } from "../_store/hooks";
+import { useAppDispatch, useAppSelector } from "../_store/hooks";
+import { clearMessages } from "../_store/uiSlice";
 import { AvailableSlotsCard } from "./AvailableSlotsCard";
 import { CreateBookingCard } from "./CreateBookingCard";
 import { YourBookingsCard } from "./YourBookingsCard";
@@ -12,12 +13,28 @@ import { GOOGLE_CLIENT_ID } from "../_lib/utils";
 
 export function BookingAppView() {
   const [googleLoaded, setGoogleLoaded] = useState(false);
+  const dispatch = useAppDispatch();
   const { googleButtonRef, signOut, grantCalendarAccess, hasCalendarAccess } =
     useBookingApp(googleLoaded);
   const user = useAppSelector((state) => state.auth.user);
   const isBusy = useAppSelector((state) => state.ui.isBusy);
   const infoMessage = useAppSelector((state) => state.ui.infoMessage);
   const errorMessage = useAppSelector((state) => state.ui.errorMessage);
+  const activeMessage = errorMessage || infoMessage;
+
+  useEffect(() => {
+    if (!activeMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatch(clearMessages());
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeMessage, dispatch]);
 
   return (
     <>
@@ -128,15 +145,26 @@ export function BookingAppView() {
             </div>
           )}
 
-          {(infoMessage || errorMessage) && (
+          {activeMessage && (
             <section
-              className={`rounded-2xl border p-4 text-sm ${
+              className={`fixed left-4 right-4 top-4 z-50 mx-auto max-w-md rounded-2xl border px-4 py-3 text-sm shadow-[0_20px_45px_-25px_rgba(28,46,38,0.45)] backdrop-blur sm:left-auto sm:right-6 sm:w-[min(100%-3rem,24rem)] ${
                 errorMessage
-                  ? "border-[#f1b8b8] bg-[#fff5f5] text-[#8a2d2d]"
-                  : "border-[#bfe3cc] bg-[#f2fbf4] text-[#1e5b33]"
+                  ? "border-[#f1b8b8] bg-[#fff5f5]/95 text-[#8a2d2d]"
+                  : "border-[#bfe3cc] bg-[#f2fbf4]/95 text-[#1e5b33]"
               }`}
+              role={errorMessage ? "alert" : "status"}
+              aria-live={errorMessage ? "assertive" : "polite"}
             >
-              {errorMessage || infoMessage}
+              <div className="flex items-start gap-3">
+                <span
+                  className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                    errorMessage ? "bg-[#fbd6d6]" : "bg-[#d8f1df]"
+                  }`}
+                >
+                  {errorMessage ? "!" : "i"}
+                </span>
+                <p className="min-w-0 flex-1 pr-2 font-medium">{activeMessage}</p>
+              </div>
             </section>
           )}
         </main>

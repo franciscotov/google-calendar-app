@@ -30,6 +30,10 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
+    clearMessages(state) {
+      state.infoMessage = "";
+      state.errorMessage = "";
+    },
     setInfoMessage(state, action: PayloadAction<string>) {
       state.infoMessage = action.payload;
       state.errorMessage = "";
@@ -67,5 +71,5 @@ const uiSlice = createSlice({
   },
 });
 
-export const { setInfoMessage, setErrorMessage } = uiSlice.actions;
+export const { clearMessages, setInfoMessage, setErrorMessage } = uiSlice.actions;
 export default uiSlice.reducer;
